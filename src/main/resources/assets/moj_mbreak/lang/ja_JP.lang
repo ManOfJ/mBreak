@@ -1,0 +1,7 @@
+moj_mbreak.config.gui.title=mBreak コンフィグ
+moj_mbreak.cfg.mining_speedmult=採掘速度の乗数
+moj_mbreak.cfg.mining_speedmult.tooltip=端的に言うと 2.5 だったら 2.5 倍の速度で掘れます\nNote: 速度が変更されるのはハーベスト判定が真となるブロックだけです
+moj_mbreak.cfg.chain_destruction=連鎖破壊
+moj_mbreak.cfg.chain_destruction.tooltip=プレイヤーの目線の高さと破壊したブロックのY座標が同じ場合､その下のブロックも連鎖的に破壊します\nNote: 連鎖破壊されるのはプレイヤーの足下の高さまでで､ハーベスト判定が真となるブロックだけです
+moj_mbreak.cfg.torch_auto_placement=たいまつの自動設置
+moj_mbreak.cfg.torch_auto_placement.tooltip=採掘した場所の明るさが 7 以下であれば手持ちのたいまつを自動で設置します

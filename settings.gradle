@@ -1,0 +1,137 @@
+
+// プロジェクトの評価前に拡張プロパティに変数を追加
+gradle.beforeProject { project ->
+
+  // この Mod プロジェクトで使用される設定の集合
+  project.ext.mcmod = [
+
+    // ビルドに関する設定の集合
+    build: [
+      // 開発に使用する IDE の名前
+      // eclipse か idea のどちらかを指定
+      ide: 'eclipse',
+
+      // Mod の開発に使用する言語
+      // java か scala のどちらかを指定
+      language: 'java',
+
+      // ビルドされるファイルのソースレベルを指定
+      sourceLevel: 1.6,
+
+      // ソースファイルのエンコーディングを指定
+      encoding: 'utf8',
+
+      // 開発中であるか否か
+      snapshot: false,
+
+
+      // 変数展開処理に関する設定の集合
+      variableExpansion: [
+        // java, scala にて変数展開処理を行うソースファイルのパス一覧
+        // パスはソースフォルダのルートからの相対パスで記述する
+        // 例)
+        // // 'src/main/java/com/example/Mod.java' の場合
+        // java: [ 'com/example/Mod.java' ]
+        java:  [],
+        scala: []
+      ],
+
+
+      // maven に関する設定の集合
+      maven: [
+        // maven プラグインを有効にするか否か
+        // 有効にすると install タスクが追加される
+        enable: false,
+
+        // maven リポジトリに関する設定の集合
+        repositories: [
+          // 依存関係解決の際にセントラルリポジトリを参照するか否か
+          central: false,
+
+          // 依存関係解決の際にローカルリポジトリを参照するか否か
+          local: false,
+
+          // 依存関係解決の際に JCenter リポジトリを参照するか否か
+          jcenter: false,
+
+          // 依存関係解決の際に参照する外部リポジトリの URL 一覧
+          url: []
+        ]
+      ],
+
+
+      // この Mod プロジェクトが依存するライブラリに関する情報一覧
+      dependencies: [
+        // TODO: ドキュメント記述
+        // compile: [ 'groupId:artifactId:version', '...' ]
+      ],
+
+
+      // 出力される jar ファイルに関する設定の集合
+      jar: [
+        // jar ファイルのグループ ID
+        // 通常はルートパッケージ名をもちいる
+        // ローカルリポジトリへのインストール時などに参照される
+        groupId: '',
+
+        // 生成される jar ファイルのベース名
+        // 設定しない場合は mcmod.info.name の値が参照される
+        baseName: '',
+
+
+        // アーカイブに関する設定の集合
+        archive: [
+          // ソース･アーカイブを出力するか否か
+          source: true,
+
+          // ドキュメント･アーカイブを出力するか否か
+          document: false
+        ],
+
+
+        // マニフェストに関する設定の集合
+        manifest: [
+          // マニフェストに記述されるメインアトリビュートの内容
+          // 例)
+          // attributes: [ FMLCorePlugin: 'com.example.LoadingPlugin' ]
+          attributes: [:]
+        ]
+      ]
+    ],
+
+
+    // mcmod.info に記述される情報の集合
+    // これらの情報は mcmod.build.variableExpansion に記述された
+    // ファイルの変数展開処理時に参照される
+    // 例)
+    // // mcmod.info.name = 'Example' とした場合
+    // // 以下は public static final String NAME = "Example" に展開される
+    // public static final String NAME = "${name}"
+    info: [
+      modid: '',
+      name: '',
+      description: '',
+      version: '',
+      mcversion: '',
+      url: '',
+      updateUrl: '',
+      authorList: [],
+      credits: '',
+      logoFile: '',
+      screenshots: [],
+      dependencies: []
+    ]
+  ]
+
+
+  // project.ext.mcmod.build のエイリアスを設定
+  project.ext.buildOpt = project.ext.mcmod.build
+
+  // project.ext.mcmod.info のエイリアスを設定
+  project.ext.mcmodInf = project.ext.mcmod.info
+
+
+  // project.ext.mcmod の設定を行うスクリプトを読み込む
+  project.apply from: 'mod_settings.gradle'
+
+}

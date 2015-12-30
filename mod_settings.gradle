@@ -1,0 +1,28 @@
+
+// クロージャ内で情報にアクセスするため
+// ローカル変数にバインドしておく
+def inf = mcmodInf // = mcmod.info
+def bld = buildOpt // = mcmod.build
+
+// mcmod.info の値を定義
+project.configure( mcmod.info ) {
+  modid      = 'moj_mbreak'
+  name       = 'mBreak'
+  version    = '1.8-1'
+  mcversion  = '1.8-11.14.4.1577'
+  url        = "https://github.com/ManOfJ/$name"
+  authorList = [ 'Man of J' ]
+}
+
+// ビルド設定の値を定義
+project.configure( mcmod.build ) {
+  ide = 'idea'
+  language = 'scala'
+  variableExpansion.scala += [
+    "manofj/com/github/${ inf.modid }/package.scala"
+  ]
+  jar.with {
+    archive.source = false
+    groupId = "manofj.com.github.${ inf.modid }"
+  }
+}

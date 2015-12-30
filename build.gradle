@@ -1,0 +1,422 @@
+
+
+/* 最新の Forge-Gradle を使用する場合はこちらのビルドスクリプトを使用する
+buildscript {
+  repositories {
+    jcenter()
+    maven {
+      name = 'forge'
+      url  = 'http://files.minecraftforge.net/maven'
+    }
+  }
+
+  dependencies {
+    classpath 'net.minecraftforge.gradle:ForgeGradle:2.0-SNAPSHOT'
+  }
+}
+
+apply plugin: 'net.minecraftforge.gradle.forge'
+*/
+
+plugins {
+  id 'net.minecraftforge.gradle.forge' version '2.0.2'
+}
+
+
+// 事前準備 ********************************
+
+
+// 定数 MAIN_SOURCE_SET_NAME のエイリアスを設定
+import static SourceSet.MAIN_SOURCE_SET_NAME as mainSetName
+
+// Mod の設定･情報の初期化
+apply from: 'mod_settings.gradle'
+
+// プロジェクトの拡張プロパティを定義
+project.ext {
+
+  // ビルド用テンポラリフォルダ名
+  buildTempDir = "$buildDir/tmp"
+
+  // 特定の開発言語が指定されている場合のみ
+  // 後続のコードブロックを実行するクロージャの定義
+  [ 'java', 'scala' ].each { language ->
+    project.ext."if_${ language }Project" = {
+      if ( buildOpt.language == language ) it.call()
+    }
+  }
+}
+
+
+// プラグインの読み込み ********************************
+
+
+// IntelliJ の場合､個別に設定が必要な項目があるためプラグインを読み込む
+if ( buildOpt.ide == 'idea' ) { apply plugin: 'idea'  }
+
+// Maven プラグインが有効になっていれば読み込み
+if ( buildOpt.maven.enable )  { apply plugin: 'maven' }
+
+// 開発言語が Scala であればプラグインを読み込み
+if_scalaProject               { apply plugin: 'scala' }
+
+
+// 基本情報の設定 ********************************
+
+
+group            = buildOpt.jar.groupId
+archivesBaseName = buildOpt.jar.baseName ?: mcmodInf.name
+version          = mcmodInf.version
+if ( buildOpt.snapshot ) { version += '-SNAPSHOT' }
+
+minecraft {
+  version          = mcmodInf.mcversion
+  runDir           = 'run'
+  mappings         = 'snapshot_20141130'
+
+  // 自前でタスクを実装するので無効化
+  makeObfSourceJar = false
+}
+
+// コンパイラの設定
+tasks.withType( AbstractCompile ) {
+  sourceCompatibility = buildOpt.sourceLevel
+  targetCompatibility = buildOpt.sourceLevel
+
+  if ( options ) { options.encoding = buildOpt.encoding }
+}
+
+// リポジトリの設定
+repositories {
+  def repoOpt = buildOpt.maven.repositories
+
+  if ( repoOpt.central ) { mavenCentral() }
+  if ( repoOpt.local )   { mavenLocal()   }
+  if ( repoOpt.jcenter ) { jcenter()      }
+
+  repoOpt.url.each       { maven.url it   }
+}
+
+// 依存関係の設定
+dependencies {
+  buildOpt.dependencies.each { k, v ->
+    v.each { "$k" it }
+  }
+}
+
+// jar のアトリビュートを設定
+jar.manifest.attributes = buildOpt.jar.manifest.attributes
+
+
+// タスク追加の事前準備 ********************************
+
+
+// タスク追加処理で使用する
+// プロジェクトの拡張プロパティを定義
+project.ext {
+  // メインのソースセットをバインド
+  mainSourceSet = sourceSets[ mainSetName ]
+
+  // システムの改行コード
+  nl = System.getProperty( 'line.separator' )
+
+  // このプロジェクトに指定のプラグインが
+  // 登録されているか否か評価するクロージャ
+  hasPlugin = { project.plugins.hasPlugin( it ) }
+}
+
+// mcmod.info のインデントを生成する関数
+def idt( int d ) { '    ' * Math.max( d, 0 ) }
+
+// Map を json 文字列に変換する関数
+def o2js( Map o, int d ) {
+  def ( i1, i2 ) = [ idt( d++ ), idt( d ) ]
+  def elms = { k, v -> "${o2js(k,0)}: ${o2js(v,d)}" }
+  def sep  = ",$nl$i2"
+
+  def sb = new StringBuilder()
+  sb << '{' << nl
+  sb << i2  << o.collect( elms ).join( sep ) << nl
+  sb << i1  << '}'
+  sb.toString()
+}
+
+// List を json 文字列に変換する関数
+def o2js( List o, int d ) {
+  def ( i1, i2 ) = [ idt( d++ ), idt( d ) ]
+  def elms = { o2js( it, d ) }
+  def sep  = ",$nl$i2"
+
+  def sb = new StringBuilder()
+  sb << '[' << nl
+  sb << i2  << o.collect( elms ).join( sep ) << nl
+  sb << i1  << ']'
+  sb.toString()
+}
+
+// Object を json 文字列に変換する関数
+def o2js( Object o, int d ) {
+  /"${ String.valueOf( o ) }"/
+}
+
+// project.ext.mcmod.info を json 文字列に変換するクロージャ
+def infTxt = { -> o2js( [ mcmod.info ], -1 ) }
+
+
+// 新規タスクの定義 ********************************
+
+
+// clean タスクを実行した後に build を行うタスクを定義
+task fullBuild( dependsOn: [ clean, build ] ) {
+  // clean の後に build が実行されるように設定
+  build.mustRunAfter clean
+}
+
+// メインのソースフォルダを作成するタスク
+task makeMainSourceDirs {
+  // 生成対象となるディレクトリ一覧を定義
+  ext {
+    source  = mainSourceSet.allSource
+    srcDirs = source.srcDirs
+  }
+
+  // setupDecompWorkspace が失敗していなければ処理を実行
+  onlyIf { setupDecompWorkspace.state.failure == null }
+
+  // 作成対象となるフォルダがすでに存在していればタスクをスキップ
+  outputs.files project.files( srcDirs )
+
+  // タスクのメイン処理
+  doLast { srcDirs.each project.&mkdir }
+
+}
+
+// リソースフォルダに mcmod.info を生成するタスク
+task genMcmodInfo {
+  // このタスクは makeMainSourceDirs よりも後に実行される
+  mustRunAfter makeMainSourceDirs
+
+  // 出力先のディレクトリ一覧と出力ファイル一覧を定義
+  ext {
+    outputDirs  = mainSourceSet.resources.srcDirs
+    outputFiles = outputDirs.collect {
+      new File( it, 'mcmod.info' )
+    }
+  }
+
+  // setupDecompWorkspace が失敗していなければ処理を実行
+  onlyIf { setupDecompWorkspace.state.failure == null }
+
+  // mcmod.info の内容に変更があれば更新
+  inputs.property 'mcmod.info', infTxt
+
+  // リソースフォルダに mcmod.info が存在しなければ生成する
+  outputs.files project.files( outputFiles )
+
+  // タスクのメイン処理
+  doLast {
+    def body = infTxt()
+    outputFiles*.text = body
+  }
+}
+
+// sourceMainJava は Forge-Gradle が定義しているタスク
+// 万一,定義されていなかったときのためにソースファイルをコピーするだけの
+// イミテーションタスクを定義するブロックを用意しておく
+if ( !tasks.getNames().contains( 'sourceMainJava' ) && hasPlugin( 'java' ) ) {
+  task sourceMainJava( type: Copy ) {
+    // ソールファイルのコピー先を定義
+    ext.output = project.file( "$buildDir/sources/$mainSetName/java" )
+
+    from project.files( mainSourceSet.java.srcDirs )
+    into { ext.output }
+  }
+
+  // java コンパイルタスクの依存関係に sourceMainJava を追加
+  compileJava.dependsOn sourceMainJava
+}
+
+// sourceMainJava の scala バージョンは定義されていないため独自に実装
+if ( !tasks.getNames().contains( 'sourceMainScala' ) && hasPlugin( 'scala' ) ) {
+  task sourceMainScala( type: Copy ) {
+    // ソールファイルのコピー先を定義
+    ext.output = project.file( "$buildDir/sources/$mainSetName/scala" )
+
+    from project.files( mainSourceSet.scala.srcDirs )
+    into { ext.output }
+  }
+
+  // scala コンパイルタスクの依存関係に sourceMainScala を追加
+  compileScala.dependsOn sourceMainScala
+}
+
+// java ソースファイルの変数展開処理を行うタスクを定義
+if ( hasPlugin( 'java' ) ) {
+  task variableExpansionJava( type:      Copy,
+                              dependsOn: sourceMainJava ) {
+    // 一時フォルダと出力先フォルダの定義
+    ext {
+      temporaryDir   = project.file( "$buildTempDir/$name" )
+      destinationDir = sourceMainJava.output
+    }
+
+    // mcmod.info に変更があれば更新する
+    inputs.property 'mcmod.info', infTxt
+
+    from( project.files( ext.temporaryDir ) ) {
+      include buildOpt.variableExpansion.java
+      expand mcmod.info
+    }
+
+    from( project.files( ext.temporaryDir ) ) {
+      exclude buildOpt.variableExpansion.java
+    }
+
+    into { ext.destinationDir }
+
+    // 依存関係にあるタスクの入出力フォルダを書き換える
+    sourceMainJava.output = ext.temporaryDir
+    compileJava.source    = project.files( ext.destinationDir )
+  }
+
+  // java コンパイルタスクの依存関係に variableExpansionJava を追加
+  compileJava.dependsOn variableExpansionJava
+}
+
+// scala ソースファイルの変数展開処理を行うタスクを定義
+if ( hasPlugin( 'scala' ) ) {
+  task variableExpansionScala( type:      Copy,
+                               dependsOn: sourceMainScala ) {
+    // 一時フォルダと出力先フォルダの定義
+    ext {
+      temporaryDir   = project.file( "$buildTempDir/$name" )
+      destinationDir = sourceMainScala.output
+    }
+
+    // mcmod.info に変更があれば更新する
+    inputs.property 'mcmod.info', infTxt
+
+    from( project.files( ext.temporaryDir ) ) {
+      include buildOpt.variableExpansion.scala
+      expand mcmod.info
+    }
+
+    from( project.files( ext.temporaryDir ) ) {
+      exclude buildOpt.variableExpansion.scala
+    }
+
+    into { ext.destinationDir }
+
+    // 依存関係にあるタスクの入出力フォルダを書き換える
+    sourceMainScala.output = ext.temporaryDir
+    compileScala.source    = project.files( ext.destinationDir )
+  }
+
+  // scala コンパイルタスクの依存関係に variableExpansionScala を追加
+  compileScala.dependsOn variableExpansionScala
+}
+
+// ソースコードのアーカイブを出力するタスクを定義
+if ( buildOpt.jar.archive.source && hasPlugin( 'java' ) ) {
+  task sourcesJar( type:      Jar,
+                   dependsOn: [ processResources, variableExpansionJava ] ) {
+    // アーカイブ化するソースディレクトリ一覧
+    ext.srcDirs = [
+      processResources.destinationDir,
+      variableExpansionJava.destinationDir
+    ]
+
+    classifier = 'sources'
+    from { ext.srcDirs }
+  }
+
+  // 開発言語が Scala の場合は variableExpansionScala を依存関係に追加
+  // さらに Scala のソースディレクトリを追加登録する
+  if ( hasPlugin( 'scala' ) ) {
+    sourcesJar.dependsOn variableExpansionScala
+    sourcesJar.srcDirs += [ variableExpansionScala.destinationDir ]
+  }
+
+  artifacts.archives sourcesJar
+}
+
+// ドキュメントのアーカイブを出力するタスクを定義
+if ( buildOpt.jar.archive.document ) {
+  if ( hasPlugin( 'scala' ) ) {
+    task scaladocJar( type: Jar, dependsOn: scaladoc ) {
+      classifier = 'scaladoc'
+      from scaladoc.destinationDir
+    }
+
+    scaladoc.source = project.fileTree( variableExpansionScala.destinationDir )
+    artifacts.archives scaladocJar
+  }
+  else if ( hasPlugin( 'java' ) ) {
+    task javadocJar( type: Jar, dependsOn: javadoc ) {
+      classifier = 'javadoc'
+      from javadoc.destinationDir
+    }
+
+    javadoc.source = project.fileTree( variableExpansionJava.destinationDir )
+    artifacts.archives javadocJar
+  }
+}
+
+
+// タスクの調整 ********************************
+
+
+// リソースファイルコピー前に mcmod.info を生成するように設定
+processResources.dependsOn genMcmodInfo
+
+// 開発環境構築処理の最後にメインソースディレクトリと
+// mcmod.info を生成するように設定
+setupDecompWorkspace.finalizedBy makeMainSourceDirs,
+                                 genMcmodInfo
+
+// 変数展開処理終了時にテンポラリフォルダを削除するように設定
+gradle.taskGraph.afterTask { task, state ->
+  switch ( task.name ) {
+    case 'variableExpansionJava':
+    case 'variableExpansionScala':
+      project.delete( task.temporaryDir )
+      break
+    default:
+      break
+  }
+}
+
+
+// IDE の調整 ********************************
+
+
+// IntelliJ プロジェクト用に設定を調整
+if ( hasPlugin( 'idea' ) ) {
+  idea.module {
+    // 変数展開前のソースファイルを読みに行かないように設定
+    excludeDirs = [
+      project.file( "$projectDir/src/$mainSetName" ),
+      project.file( '.gradle' )
+    ]
+
+    // 変数展開後のソースファイルを読み込むように設定
+    sourceDirs = [
+      processResources.destinationDir,
+      variableExpansionJava.destinationDir,
+      variableExpansionScala.destinationDir
+    ]
+
+    generatedSourceDirs = sourceDirs.clone()
+
+    inheritOutputDirs = false
+    outputDir = project.file( "$buildDir/classes/production" )
+  }
+
+  // IntelliJ にてクライアント･サーバー起動前に実行するタスクを追加
+  // このタスクを走らせることで変更のあったソースがコンパイル対象となる
+  task prepareSources( dependsOn: clean ) {
+    finalizedBy variableExpansionJava,
+                variableExpansionScala
+  }
+}
+

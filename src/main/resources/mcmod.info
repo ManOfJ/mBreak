@@ -1,0 +1,22 @@
+[
+{
+    "modid": "moj_mbreak",
+    "name": "mBreak",
+    "description": "",
+    "version": "1.8-1",
+    "mcversion": "1.8-11.14.4.1577",
+    "url": "https://github.com/ManOfJ/mBreak",
+    "updateUrl": "",
+    "authorList": [
+        "Man of J"
+    ],
+    "credits": "",
+    "logoFile": "",
+    "screenshots": [
+        
+    ],
+    "dependencies": [
+        
+    ]
+}
+]
