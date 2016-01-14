@@ -6,7 +6,7 @@ import net.minecraft.block.state.IBlockState
 import net.minecraft.entity.player.{ EntityPlayer, EntityPlayerMP }
 import net.minecraft.init.Blocks
 import net.minecraft.item.ItemStack
-import net.minecraft.util.BlockPos
+import net.minecraft.util.{ ChatComponentTranslation, BlockPos }
 import net.minecraft.util.EnumFacing.{ NORTH, WEST, SOUTH, EAST }
 import net.minecraft.world.World
 import net.minecraftforge.common.ForgeHooks
@@ -140,6 +140,12 @@ object mBreakEventHandler {
                           torchItemStack.stackSize = 64
                           if ( torchPlacement() ) {
                             player.inventory.consumeInventoryItem( torchItemStack.getItem )
+                            if ( !player.inventory.hasItem( torchItemStack.getItem ) )
+                              player.addChatMessage { new ChatComponentTranslation(
+                                "moj_mbreak.chat.torch_runout",
+                                torchItemStack.getDisplayName
+                              ) }
+
                             // 処理が完了したためカウンタを進める
                             counter.dropWhile( _ < 5 )
                           }
