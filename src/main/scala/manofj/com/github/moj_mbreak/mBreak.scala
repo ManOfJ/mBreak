@@ -5,9 +5,9 @@ import java.io.File
 import net.minecraft.launchwrapper.Launch
 import net.minecraftforge.common.MinecraftForge
 import net.minecraftforge.common.config.Configuration
+import net.minecraftforge.fml.common.Mod
 import net.minecraftforge.fml.common.Mod.EventHandler
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent
-import net.minecraftforge.fml.common.{ FMLCommonHandler, Mod }
 import org.apache.logging.log4j.{ LogManager, Logger }
 
 /**
@@ -46,6 +46,6 @@ object mBreak {
     }
 
     MinecraftForge.EVENT_BUS.register( mBreakEventHandler )
-    FMLCommonHandler.instance.bus.register( mBreakConfigHandler )
+    MinecraftForge.EVENT_BUS.register( mBreakConfigHandler )
   }
 }
