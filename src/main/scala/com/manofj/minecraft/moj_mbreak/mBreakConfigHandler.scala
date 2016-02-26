@@ -1,9 +1,11 @@
-package manofj.com.github.moj_mbreak
+package com.manofj.minecraft.moj_mbreak
 
 import java.util.Collections
 
 import com.google.common.collect.Lists
+
 import net.minecraft.client.resources.I18n.{ format => i18n }
+
 import net.minecraftforge.common.config.{ ConfigElement, Configuration, Property }
 import net.minecraftforge.fml.client.config.IConfigElement
 import net.minecraftforge.fml.client.event.ConfigChangedEvent.OnConfigChangedEvent

@@ -1,14 +1,17 @@
-package manofj.com.github.moj_mbreak
+package com.manofj.minecraft.moj_mbreak
 
-import akka.actor.{ ActorRef, Actor, ActorSystem, Props }
-import com.google.common.collect.{ Maps, Lists }
+import akka.actor.{ Actor, ActorRef, ActorSystem, Props }
+
+import com.google.common.collect.{ Lists, Maps }
+
 import net.minecraft.block.state.IBlockState
-import net.minecraft.entity.player.{ EntityPlayer, EntityPlayerMP }
+import net.minecraft.entity.player.{EntityPlayer, EntityPlayerMP}
 import net.minecraft.init.Blocks
 import net.minecraft.item.ItemStack
-import net.minecraft.util.{ ChatComponentTranslation, BlockPos }
-import net.minecraft.util.EnumFacing.{ NORTH, WEST, SOUTH, EAST }
+import net.minecraft.util.EnumFacing.{EAST, NORTH, SOUTH, WEST}
+import net.minecraft.util.{BlockPos, ChatComponentTranslation}
 import net.minecraft.world.World
+
 import net.minecraftforge.common.ForgeHooks
 import net.minecraftforge.event.entity.player.PlayerEvent.BreakSpeed
 import net.minecraftforge.event.world.BlockEvent.BreakEvent
@@ -21,7 +24,8 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent
   */
 object mBreakEventHandler {
   import math.{ ceil, floor }
-  import mBreakConfigHandler.{ mining_speedmult, chain_destruction, torch_auto_placement }
+
+  import mBreakConfigHandler.{ chain_destruction, mining_speedmult, torch_auto_placement }
 
   // アクター: たいまつ設置処理を行うメッセージ
   private[ this ] final val TORCH_PLACEMENT = "msg:torch_placement"
@@ -109,7 +113,9 @@ object mBreakEventHandler {
 
           sideOpt match {
             case Some( side ) =>
-              import system.dispatcher, scala.concurrent.duration._
+              import scala.concurrent.duration._
+
+              import system.dispatcher
 
               val hitPos = pos.add( 0.5D, 0.5D, 0.5D )
               // たいまつの設置処理を行うアクター

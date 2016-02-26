@@ -1,14 +1,16 @@
-package manofj.com.github.moj_mbreak
+package com.manofj.minecraft.moj_mbreak
 
 import java.io.File
 
+import org.apache.logging.log4j.{ LogManager, Logger }
+
 import net.minecraft.launchwrapper.Launch
+
 import net.minecraftforge.common.MinecraftForge
 import net.minecraftforge.common.config.Configuration
 import net.minecraftforge.fml.common.Mod
 import net.minecraftforge.fml.common.Mod.EventHandler
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent
-import org.apache.logging.log4j.{ LogManager, Logger }
 
 /**
   * mBreak の Mod オブジェクト
