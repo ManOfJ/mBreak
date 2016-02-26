@@ -3,10 +3,10 @@
     "modid": "moj_mbreak",
     "name": "mBreak",
     "description": "",
-    "version": "1.8.9-1",
+    "version": "1.8.9-0",
     "mcversion": "1.8.9-11.15.0.1694",
-    "url": "https://github.com/ManOfJ/mBreak",
-    "updateUrl": "",
+    "url": "http://manofj.com/minecraft",
+    "updateUrl": "http://manofj.com/minecraft/update?v=mBreak",
     "authorList": [
         "Man of J"
     ],

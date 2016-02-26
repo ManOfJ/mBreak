@@ -19,6 +19,7 @@ import net.minecraftforge.fml.common.event.FMLPreInitializationEvent
 @Mod( modid       = MOD_ID,
       name        = NAME,
       version     = VERSION,
+      updateJSON  = UPDATE_JSON,
       modLanguage = LANGUAGE,
       guiFactory  = GUI_FACTORY )
 object mBreak {
