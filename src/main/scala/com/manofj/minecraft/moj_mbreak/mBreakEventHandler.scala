@@ -148,8 +148,7 @@ object mBreakEventHandler {
                             player.inventory.consumeInventoryItem( torchItemStack.getItem )
                             if ( !player.inventory.hasItem( torchItemStack.getItem ) )
                               player.addChatMessage { new ChatComponentTranslation(
-                                "moj_mbreak.chat.torch_runout",
-                                torchItemStack.getDisplayName
+                                "moj_mbreak.chat.torch_runout"
                               ) }
 
                             // 処理が完了したためカウンタを進める
