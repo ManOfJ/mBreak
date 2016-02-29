@@ -5,11 +5,11 @@ import akka.actor.{ Actor, ActorRef, ActorSystem, Props }
 import com.google.common.collect.{ Lists, Maps }
 
 import net.minecraft.block.state.IBlockState
-import net.minecraft.entity.player.{EntityPlayer, EntityPlayerMP}
+import net.minecraft.entity.player.{ EntityPlayer, EntityPlayerMP }
 import net.minecraft.init.Blocks
 import net.minecraft.item.ItemStack
-import net.minecraft.util.EnumFacing.{EAST, NORTH, SOUTH, WEST}
-import net.minecraft.util.{BlockPos, ChatComponentTranslation}
+import net.minecraft.util.EnumFacing.{ EAST, NORTH, SOUTH, WEST }
+import net.minecraft.util.{ BlockPos, ChatComponentTranslation }
 import net.minecraft.world.World
 
 import net.minecraftforge.common.ForgeHooks
@@ -28,10 +28,10 @@ object mBreakEventHandler {
   import mBreakConfigHandler.{ chain_destruction, mining_speedmult, torch_auto_placement }
 
   // アクター: たいまつ設置処理を行うメッセージ
-  private[ this ] final val TORCH_PLACEMENT = "msg:torch_placement"
+  private[ this ] case object TorchPlacement
 
   // アクター: 自らを破棄するメッセージ
-  private[ this ] final val KILL = "msg:kill"
+  private[ this ] case object Kill
 
 
   // 連鎖破壊により壊されたブロックの座標リスト
@@ -131,13 +131,13 @@ object mBreakEventHandler {
 
                   // アクター処理内容
                   override def receive: Receive = {
-                    case KILL => counter.next match {
+                    case Kill => counter.next match {
                       case 1 => // たいまつ設置処理を行っていなければ一度だけ､即座に実行する
                         counter.dropWhile( _ < 5 )
-                        self ! TORCH_PLACEMENT
+                        self ! TorchPlacement
                       case _ => system.stop( self )
                     }
-                    case TORCH_PLACEMENT =>
+                    case TorchPlacement =>
                       // プレイヤーがたいまつを所持していることが前提条件
                       if ( player.inventory.hasItem( torchItemStack.getItem ) ) {
                         // 指定座標が空気ブロックで､なおかつ明るさレベルが 7 以下の場合
@@ -158,18 +158,18 @@ object mBreakEventHandler {
                         }
                       }
                       // 3 回実行したら自らを破棄する
-                      if ( counter.next >= 3 ) self ! KILL
+                      if ( counter.next >= 3 ) self ! Kill
                   }
                 }}
               }
 
               // アクターのスケジューラにたいまつ設置アクターを設定する
-              system.scheduler.schedule( 250.millisecond, 250.millisecond, tPlacementActor, TORCH_PLACEMENT )
+              system.scheduler.schedule( 250.millisecond, 250.millisecond, tPlacementActor, TorchPlacement )
 
               // たいまつ設置アクターをプレイヤーに紐づける
               Option( activeActor.put( player, tPlacementActor ) ) match {
                 // まだ稼働している古いたいまつ設置アクターを破棄する
-                case Some( actor ) => actor ! KILL
+                case Some( actor ) => actor ! Kill
                 case None => // 何もしない
               }
             case None         =>
