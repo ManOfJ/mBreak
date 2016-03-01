@@ -26,6 +26,7 @@ object mBreakEventHandler {
   import math.{ ceil, floor }
 
   import mBreakConfigHandler.{ chain_destruction, mining_speedmult, torch_auto_placement }
+  import mBreakState.{ enable_mining_speedmult, enable_chain_destruction, enable_torch_auto_placement }
 
   // アクター: たいまつ設置処理を行うメッセージ
   private[ this ] case object TorchPlacement
@@ -58,7 +59,7 @@ object mBreakEventHandler {
       ForgeHooks.canToolHarvestBlock( plyr.worldObj, pos, plyr.getCurrentEquippedItem )
 
     import evt._
-    if ( canToolHarvestBlock( pos, entityPlayer ) ) {
+    if ( enable_mining_speedmult && canToolHarvestBlock( pos, entityPlayer ) ) {
       newSpeed = originalSpeed * mining_speedmult
     }
   }
@@ -89,6 +90,7 @@ object mBreakEventHandler {
     def tAutoPlacementCheckCondition( plyr:  EntityPlayerMP,
                                       pos:   BlockPos,
                                       state: IBlockState ): Boolean =
+      enable_torch_auto_placement    &&
       torch_auto_placement           &&
       !positions.contains( pos )     &&
       state.getBlock != Blocks.torch &&
@@ -177,7 +179,7 @@ object mBreakEventHandler {
           }
 
         }
-        if ( chain_destruction ) // 連鎖破壊処理
+        if ( enable_chain_destruction && chain_destruction ) // 連鎖破壊処理
         {
           if ( positions contains pos ) // 連鎖破壊により壊されたブロックの場合
           {
