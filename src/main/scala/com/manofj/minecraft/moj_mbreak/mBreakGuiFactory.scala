@@ -1,14 +1,16 @@
-package manofj.com.github.moj_mbreak
+package com.manofj.minecraft.moj_mbreak
 
 import java.util.{ Set => JSet }
 
-import manofj.com.github.moj_mbreak.mBreakConfigHandler.{ CONFIG_ID, configElements }
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiScreen
 import net.minecraft.client.resources.I18n
+
 import net.minecraftforge.fml.client.IModGuiFactory
 import net.minecraftforge.fml.client.IModGuiFactory.{ RuntimeOptionCategoryElement, RuntimeOptionGuiHandler }
 import net.minecraftforge.fml.client.config.GuiConfig
+
+import com.manofj.minecraft.moj_mbreak.mBreakConfigHandler.{ CONFIG_ID, configElements }
 
 
 /**

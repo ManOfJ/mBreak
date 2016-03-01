@@ -1,4 +1,4 @@
-package manofj.com.github
+package com.manofj.minecraft
 
 /**
   * mBreak-Mod のルートパッケージオブジェクト
@@ -8,6 +8,7 @@ package object moj_mbreak {
   final val MOD_ID      = "@@MODID@@"
   final val NAME        = "@@MODNAME@@"
   final val VERSION     = "@@MODVERSION@@"
+  final val UPDATE_JSON = "@@UPDATEJSON@@"
   final val LANGUAGE    = "scala"
-  final val GUI_FACTORY = "manofj.com.github.moj_mbreak.mBreakGuiFactory"
+  final val GUI_FACTORY = "com.manofj.minecraft.moj_mbreak.mBreakGuiFactory"
 }

@@ -1,14 +1,18 @@
-package manofj.com.github.moj_mbreak
+package com.manofj.minecraft.moj_mbreak
 
 import java.io.File
 
+import org.apache.logging.log4j.{ LogManager, Logger }
+
+import net.minecraft.client.settings.KeyBinding
 import net.minecraft.launchwrapper.Launch
+
 import net.minecraftforge.common.MinecraftForge
 import net.minecraftforge.common.config.Configuration
+import net.minecraftforge.fml.client.registry.ClientRegistry
 import net.minecraftforge.fml.common.Mod
 import net.minecraftforge.fml.common.Mod.EventHandler
-import net.minecraftforge.fml.common.event.FMLPreInitializationEvent
-import org.apache.logging.log4j.{ LogManager, Logger }
+import net.minecraftforge.fml.common.event.{ FMLInitializationEvent, FMLPreInitializationEvent }
 
 /**
   * mBreak の Mod オブジェクト
@@ -17,6 +21,7 @@ import org.apache.logging.log4j.{ LogManager, Logger }
 @Mod( modid       = MOD_ID,
       name        = NAME,
       version     = VERSION,
+      updateJSON  = UPDATE_JSON,
       modLanguage = LANGUAGE,
       guiFactory  = GUI_FACTORY )
 object mBreak {
@@ -47,5 +52,28 @@ object mBreak {
 
     MinecraftForge.EVENT_BUS.register( mBreakEventHandler )
     MinecraftForge.EVENT_BUS.register( mBreakConfigHandler )
+  }
+
+  /**
+    * 初期化イベント
+    * キーバインドの設定を行う
+    * @param evt 初期化イベント
+    */
+  @EventHandler
+  def init( evt: FMLInitializationEvent ): Unit = {
+    import net.minecraftforge.fml.relauncher.Side.{ CLIENT, SERVER }
+
+    evt.getSide match {
+      case SERVER => // サーバー側では何もしない
+      case CLIENT =>
+        def registerKeyBinding( opt: Option[ ( KeyBinding, _ ) ] ): Unit =
+          opt.map( _._1 ).foreach( ClientRegistry.registerKeyBinding )
+
+        registerKeyBinding( mBreakConfigHandler.toggle_mining_speedmult )
+        registerKeyBinding( mBreakConfigHandler.toggle_chain_destruction )
+        registerKeyBinding( mBreakConfigHandler.toggle_torch_auto_placement )
+    }
+
+    MinecraftForge.EVENT_BUS.register( mBreakKeyHandler )
   }
 }
