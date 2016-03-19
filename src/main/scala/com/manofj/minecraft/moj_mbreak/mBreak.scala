@@ -1,7 +1,5 @@
 package com.manofj.minecraft.moj_mbreak
 
-import java.io.File
-
 import org.apache.logging.log4j.{ LogManager, Logger }
 
 import net.minecraft.client.settings.KeyBinding
@@ -46,8 +44,7 @@ object mBreak {
     logger = Option( evt.getModLog )
 
     mBreakConfigHandler.captureConfig {
-      val cfgDir = evt.getModConfigurationDirectory
-      new Configuration( new File( cfgDir, s"$NAME.cfg" ) )
+      new Configuration( evt.getSuggestedConfigurationFile )
     }
 
     MinecraftForge.EVENT_BUS.register( mBreakEventHandler )
