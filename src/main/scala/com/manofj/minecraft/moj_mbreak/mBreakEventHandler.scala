@@ -8,8 +8,11 @@ import net.minecraft.block.state.IBlockState
 import net.minecraft.entity.player.{ EntityPlayer, EntityPlayerMP }
 import net.minecraft.init.Blocks
 import net.minecraft.item.ItemStack
+import net.minecraft.util.EnumActionResult.SUCCESS
 import net.minecraft.util.EnumFacing.{ EAST, NORTH, SOUTH, WEST }
-import net.minecraft.util.{ BlockPos, ChatComponentTranslation }
+import net.minecraft.util.EnumHand.MAIN_HAND
+import net.minecraft.util.math.BlockPos
+import net.minecraft.util.text.TextComponentTranslation
 import net.minecraft.world.World
 
 import net.minecraftforge.common.ForgeHooks
@@ -56,7 +59,7 @@ object mBreakEventHandler {
   def breakSpeedEvent( evt: BreakSpeed ): Unit = {
     // プレイヤーが指定座標のブロックをハーベストできるかどうか評価する
     def canToolHarvestBlock( pos: BlockPos, plyr: EntityPlayer ): Boolean =
-      ForgeHooks.canToolHarvestBlock( plyr.worldObj, pos, plyr.getCurrentEquippedItem )
+      ForgeHooks.canToolHarvestBlock( plyr.worldObj, pos, plyr.getHeldItemMainhand )
 
     import evt._
     if ( enable_mining_speedmult && canToolHarvestBlock( pos, entityPlayer ) ) {
@@ -77,12 +80,12 @@ object mBreakEventHandler {
 
     // ブロックを即座に破壊する関数
     def breakBelowBlock( wld: World, pos: BlockPos, plyr: EntityPlayerMP ): Unit = {
-      if (    !wld.getBlockState( pos ).getBlock.isAir( wld, pos )
-           && ForgeHooks.canToolHarvestBlock( wld, pos, plyr.getCurrentEquippedItem ) )
+      if (    !wld.isAirBlock( pos )
+           && ForgeHooks.canToolHarvestBlock( wld, pos, plyr.getHeldItemMainhand ) )
       {
         positions.add( pos )
         wld.sendBlockBreakProgress( plyr.getEntityId, pos, -1 )
-        plyr.theItemInWorldManager.tryHarvestBlock( pos )
+        plyr.interactionManager.tryHarvestBlock( pos )
       }
     }
 
@@ -94,7 +97,7 @@ object mBreakEventHandler {
       torch_auto_placement           &&
       !positions.contains( pos )     &&
       state.getBlock != Blocks.torch &&
-      ForgeHooks.canToolHarvestBlock( plyr.worldObj, pos, plyr.getCurrentEquippedItem )
+      ForgeHooks.canToolHarvestBlock( plyr.worldObj, pos, plyr.getHeldItemMainhand )
 
 
     // 座標の明るさレベルが 7 以下であるか評価する関数
@@ -128,8 +131,16 @@ object mBreakEventHandler {
 
                   // たいまつの設置を試みる関数
                   private[ this ] def torchPlacement() =
-                    torchItemStack.onItemUse( player, world, pos, side, hitPos.getX, hitPos.getY, hitPos.getZ )
-
+                    torchItemStack.onItemUse(
+                      player,
+                      world,
+                      pos,
+                      MAIN_HAND,
+                      side,
+                      hitPos.getX,
+                      hitPos.getY,
+                      hitPos.getZ
+                    ) == SUCCESS
 
                   // アクター処理内容
                   override def receive: Receive = {
@@ -141,15 +152,16 @@ object mBreakEventHandler {
                     }
                     case TorchPlacement =>
                       // プレイヤーがたいまつを所持していることが前提条件
-                      if ( player.inventory.hasItem( torchItemStack.getItem ) ) {
+                      if ( player.inventory.hasItemStack( torchItemStack ) ) {
                         // 指定座標が空気ブロックで､なおかつ明るさレベルが 7 以下の場合
                         // プレイヤーのインベントリからたいまつを使用する
                         if ( world.isAirBlock( pos ) && isDarker( world, pos ) ) {
                           torchItemStack.stackSize = 64
                           if ( torchPlacement() ) {
-                            player.inventory.consumeInventoryItem( torchItemStack.getItem )
-                            if ( !player.inventory.hasItem( torchItemStack.getItem ) )
-                              player.addChatMessage { new ChatComponentTranslation(
+                            val slot = player.inventory.getSlotFor( torchItemStack )
+                            player.inventory.decrStackSize( slot, 1 )
+                            if ( !player.inventory.hasItemStack( torchItemStack ) )
+                              player.addChatMessage { new TextComponentTranslation(
                                 "moj_mbreak.chat.torch_runout"
                               ) }
 

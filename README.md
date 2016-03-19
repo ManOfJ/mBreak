@@ -1,7 +1,7 @@
-mBreak - Minecraft Mod
+mBreak - [Minecraft Mod](http://manofj.com/minecraft/)
 ===============================
 
-Version 1.8.9-2
+Version 1.9-1
 ![IMAGE](http://i.imgur.com/ONkhdsq.gif "")
 
 0. 既知の不具合
@@ -10,9 +10,10 @@ Version 1.8.9-2
 1. Mod 機能一覧
 ---------------
 
-  - ブロックの採掘速度を N 倍速化 ( デフォルト 2.5 倍 )
-  - 採掘したブロックがプレイヤーの目線と同じ高さにあった場合は､その下のブロックも連鎖的に破壊
-  - ブロックを採掘した後の空間が明るさレベル 7 以下であれば手持ちのたいまつを自動で設置
+  - 各機能の詳細に関しては [Wiki](https://github.com/ManOfJ/mBreak/wiki/Function) を参照してください
+  - ブロックの採掘速度を変更
+  - ごく限定的なブロックの連鎖破壊
+  - ブロック採掘時にたいまつを自動で設置
 
 2. インストール
 ---------------
@@ -25,15 +26,18 @@ Version 1.8.9-2
 3. コンフィグ
 ---------------
 
+  - 設定項目の詳細に関しては [Wiki](https://github.com/ManOfJ/mBreak/wiki/Configuration) を参照してください
   - ゲーム内で変更する場合 ( 推奨 )
     - タイトル画面から Mods -> 一覧から mBreak を選択 -> Config ボタンを押下
     - ゲームメニュー ( ゲーム中 ESC ) の Mod Options... を選択 -> 一覧から mBreak を選択 -> Config ボタンを押下
       - Note: 古いバージョンの Minecraft Forge だと動作しないことがあります
   - コンフィグファイルを直接編集する場合
-    - Forge 環境コンフィグフォルダの mBreak.cfg をエディタで編集
+    - Forge 環境コンフィグフォルダの moj_mbreak.cfg をエディタで編集
 
 4. 今後の更新予定
 ---------------
+
+  - トグルキーで機能をオン/オフ切り替えした際のチャットメッセージがプレイヤーの発言になっているのを修正したい
 
 5. 更新履歴
 ---------------
@@ -42,6 +46,9 @@ Version 1.8.9-2
     バージョンの後ろに表記されている Mdk のバージョンは開発に使用したものです
     このバージョンでなければ動作しない､ということはないのであくまで参考程度に考えてください
 
+  - 1.9 @ Mdk 1.9-12.16.0.1767-1.9
+    - Minecraft 1.9 に対応
+    - コンフィグのファイル名を Mod名.cfg から ModID.cfg に変更
   - 1.8.9-2 @ Mdk 1.8.9-11.15.0.1694
     - 各機能をキーボード操作でオン/オフ切り替えできるように
     - UpdateJSONに対応
@@ -62,7 +69,6 @@ Version 1.8.9-2
 
 ---------------
 
-ご意見,ご要望,バグ報告などありましたら [Issue](https://github.com/ManOfJ/mBreak/issues) か下記の連絡手段でお願いします
-
-  - Mail: <man.of.j@outlook.com>
+ご意見,ご要望,バグ報告などありましたら [Issue](https://github.com/ManOfJ/ExampleMod/issues) か下記の連絡手段でお願いします
+  - E-mail: <man.of.j@outlook.com>
   - Twitter: [_ManOfJ](https://twitter.com/_ManOfJ)
