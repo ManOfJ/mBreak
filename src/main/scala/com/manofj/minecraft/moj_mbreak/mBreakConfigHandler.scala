@@ -119,7 +119,7 @@ object mBreakConfigHandler {
       prop = cfg.get( CONFIG_ID, "mining_speedmult", 2.5 )
       prop.setMaxValue( 100 )
       prop.setMinValue(   0 )
-      prop.comment = i18n( "moj_mbreak.cfg.mining_speedmult.tooltip" )
+      prop.setComment( i18n( "moj_mbreak.cfg.mining_speedmult.tooltip" ) )
       prop.setLanguageKey( "moj_mbreak.cfg.mining_speedmult" )
       order add prop.getName
       mSpeedmult = prop.getDouble.toFloat
@@ -127,7 +127,7 @@ object mBreakConfigHandler {
       mBreak.log.debug( s"Bind mining_speedmult: $mSpeedmult" )
 
       prop = cfg.get( CONFIG_ID, "chain_destruction", true )
-      prop.comment = i18n( "moj_mbreak.cfg.chain_destruction.tooltip" )
+      prop.setComment( i18n( "moj_mbreak.cfg.chain_destruction.tooltip" ) )
       prop.setLanguageKey( "moj_mbreak.cfg.chain_destruction" )
       order add prop.getName
       cDestruction = prop.getBoolean
@@ -135,7 +135,7 @@ object mBreakConfigHandler {
       mBreak.log.debug( s"Bind chain_destruction: $cDestruction" )
 
       prop = cfg.get( CONFIG_ID, "torch_auto_placement", true )
-      prop.comment = i18n( "moj_mbreak.cfg.torch_auto_placement.tooltip" )
+      prop.setComment( i18n( "moj_mbreak.cfg.torch_auto_placement.tooltip" ) )
       prop.setLanguageKey( "moj_mbreak.cfg.torch_auto_placement" )
       order add prop.getName
       tAutoPlacement = prop.getBoolean
@@ -143,7 +143,7 @@ object mBreakConfigHandler {
       mBreak.log.debug( s"Bind torch_auto_placement: $tAutoPlacement" )
 
       prop = cfg.get( CONFIG_ID, "toggle_mining_speedmult", Array.empty[ String ] )
-      prop.comment = i18n( "moj_mbreak.cfg.toggle_mining_speedmult.tooltip" )
+      prop.setComment( i18n( "moj_mbreak.cfg.toggle_mining_speedmult.tooltip" ) )
       prop.setLanguageKey( "moj_mbreak.cfg.toggle_mining_speedmult" )
       order add prop.getName
       mSpeedmultKey = prop.getStringList
@@ -151,7 +151,7 @@ object mBreakConfigHandler {
       mBreak.log.debug( s"Bind toggle_mining_speedmult: ${ stra2str( mSpeedmultKey ) }" )
 
       prop = cfg.get( CONFIG_ID, "toggle_chain_destruction", Array.empty[ String ] )
-      prop.comment = i18n( "moj_mbreak.cfg.toggle_chain_destruction.tooltip" )
+      prop.setComment( i18n( "moj_mbreak.cfg.toggle_chain_destruction.tooltip" ) )
       prop.setLanguageKey( "moj_mbreak.cfg.toggle_chain_destruction" )
       order add prop.getName
       cDestructionKey = prop.getStringList
@@ -159,7 +159,7 @@ object mBreakConfigHandler {
       mBreak.log.debug( s"Bind toggle_chain_destruction: ${ stra2str( cDestructionKey ) }" )
 
       prop = cfg.get( CONFIG_ID, "toggle_torch_auto_placement", Array.empty[ String ] )
-      prop.comment = i18n( "moj_mbreak.cfg.toggle_torch_auto_placement.tooltip" )
+      prop.setComment( i18n( "moj_mbreak.cfg.toggle_torch_auto_placement.tooltip" ) )
       prop.setLanguageKey( "moj_mbreak.cfg.toggle_torch_auto_placement" )
       order add prop.getName
       tAutoPlacementKey = prop.getStringList
@@ -205,7 +205,7 @@ object mBreakConfigHandler {
   @SubscribeEvent
   def onConfigChanged( evt: OnConfigChangedEvent ): Unit = {
     import evt._
-    if ( modID == MOD_ID && configID == CONFIG_ID ) {
+    if ( getModID == MOD_ID && getConfigID == CONFIG_ID ) {
       syncConfig( false )
     }
   }

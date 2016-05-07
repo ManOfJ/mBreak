@@ -62,8 +62,8 @@ object mBreakEventHandler {
       ForgeHooks.canToolHarvestBlock( plyr.worldObj, pos, plyr.getHeldItemMainhand )
 
     import evt._
-    if ( enable_mining_speedmult && canToolHarvestBlock( pos, entityPlayer ) ) {
-      newSpeed = originalSpeed * mining_speedmult
+    if ( enable_mining_speedmult && canToolHarvestBlock( getPos, getEntityPlayer ) ) {
+      setNewSpeed( getOriginalSpeed * mining_speedmult )
     }
   }
 
@@ -108,7 +108,7 @@ object mBreakEventHandler {
     evt.getPlayer match {
       case player: EntityPlayerMP => // サーバー側の処理
         import evt._
-        if ( tAutoPlacementCheckCondition( player, pos, state ) ) // たいまつ自動設置処理
+        if ( tAutoPlacementCheckCondition( player, getPos, getState ) ) // たいまつ自動設置処理
         {
           val sideOpt = player.getHorizontalFacing match {
             case NORTH | SOUTH  => Option( WEST )
@@ -122,7 +122,7 @@ object mBreakEventHandler {
 
               import system.dispatcher
 
-              val hitPos = pos.add( 0.5D, 0.5D, 0.5D )
+              val hitPos = getPos.add( 0.5D, 0.5D, 0.5D )
               // たいまつの設置処理を行うアクター
               val tPlacementActor = system.actorOf {
                 Props { new Actor {
@@ -133,8 +133,8 @@ object mBreakEventHandler {
                   private[ this ] def torchPlacement() =
                     torchItemStack.onItemUse(
                       player,
-                      world,
-                      pos,
+                      getWorld,
+                      getPos,
                       MAIN_HAND,
                       side,
                       hitPos.getX,
@@ -155,7 +155,7 @@ object mBreakEventHandler {
                       if ( player.inventory.hasItemStack( torchItemStack ) ) {
                         // 指定座標が空気ブロックで､なおかつ明るさレベルが 7 以下の場合
                         // プレイヤーのインベントリからたいまつを使用する
-                        if ( world.isAirBlock( pos ) && isDarker( world, pos ) ) {
+                        if ( getWorld.isAirBlock( getPos ) && isDarker( getWorld, getPos ) ) {
                           torchItemStack.stackSize = 64
                           if ( torchPlacement() ) {
                             val slot = player.inventory.getSlotFor( torchItemStack )
@@ -193,19 +193,19 @@ object mBreakEventHandler {
         }
         if ( enable_chain_destruction && chain_destruction ) // 連鎖破壊処理
         {
-          if ( positions contains pos ) // 連鎖破壊により壊されたブロックの場合
+          if ( positions contains getPos ) // 連鎖破壊により壊されたブロックの場合
           {
             // ブロックのY座標がプレイヤーのY座標より高ければ､さらに下のブロックを破壊する
-            if ( pos.getY > player.posY )
-              breakBelowBlock( world, pos.down, player )
+            if ( getPos.getY > player.posY )
+              breakBelowBlock( getWorld, getPos.down, player )
 
-            positions remove pos
+            positions remove getPos
           }
           else // 正規の手段で壊されたブロックの場合
           {
             // ブロックの高さがプレイヤーの目線の高さと同じなら､下のブロックを破壊する
-            if ( pos.getY == getEyeHeightY( player ) )
-              breakBelowBlock( world, pos.down, player )
+            if ( getPos.getY == getEyeHeightY( player ) )
+              breakBelowBlock( getWorld, getPos.down, player )
           }
         }
       case _ =>
