@@ -6,7 +6,6 @@ import net.minecraft.client.settings.KeyBinding
 import net.minecraft.launchwrapper.Launch
 
 import net.minecraftforge.common.MinecraftForge
-import net.minecraftforge.common.config.Configuration
 import net.minecraftforge.fml.client.registry.ClientRegistry
 import net.minecraftforge.fml.common.Mod
 import net.minecraftforge.fml.common.Mod.EventHandler
@@ -41,11 +40,11 @@ object mBreak {
     */
   @EventHandler
   def preInit( evt: FMLPreInitializationEvent ): Unit = {
+    import com.manofj.minecraft.moj_commons.config.javaFile2ForgeConfig
+
     logger = Option( evt.getModLog )
 
-    mBreakConfigHandler.captureConfig {
-      new Configuration( evt.getSuggestedConfigurationFile )
-    }
+    mBreakConfigHandler.captureConfig( evt.getSuggestedConfigurationFile )
 
     MinecraftForge.EVENT_BUS.register( mBreakEventHandler )
     MinecraftForge.EVENT_BUS.register( mBreakConfigHandler )
@@ -58,7 +57,7 @@ object mBreak {
     */
   @EventHandler
   def init( evt: FMLInitializationEvent ): Unit = {
-    import net.minecraftforge.fml.relauncher.Side.{ CLIENT, SERVER }
+    import net.minecraftforge.fml.relauncher.Side.{CLIENT, SERVER}
 
     evt.getSide match {
       case SERVER => // サーバー側では何もしない
