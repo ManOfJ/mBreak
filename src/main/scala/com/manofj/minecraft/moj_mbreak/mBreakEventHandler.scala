@@ -6,7 +6,7 @@ import com.google.common.collect.{ Lists, Maps }
 
 import net.minecraft.block.state.IBlockState
 import net.minecraft.entity.player.{ EntityPlayer, EntityPlayerMP }
-import net.minecraft.init.Blocks
+import net.minecraft.init.Blocks.TORCH
 import net.minecraft.item.ItemStack
 import net.minecraft.util.EnumActionResult.SUCCESS
 import net.minecraft.util.EnumFacing.{ EAST, NORTH, SOUTH, WEST }
@@ -48,7 +48,7 @@ object mBreakEventHandler {
   private[ this ] val activeActor = Maps.newHashMap[ EntityPlayer, ActorRef ]
 
   // たいまつのアイテムスタック
-  private[ this ] val torchItemStack = new ItemStack( Blocks.torch )
+  private[ this ] val torchItemStack = new ItemStack( TORCH )
 
   /**
     * ブロックの採掘速度計算イベントをフックする
@@ -93,10 +93,10 @@ object mBreakEventHandler {
     def tAutoPlacementCheckCondition( plyr:  EntityPlayerMP,
                                       pos:   BlockPos,
                                       state: IBlockState ): Boolean =
-      enable_torch_auto_placement    &&
-      torch_auto_placement           &&
-      !positions.contains( pos )     &&
-      state.getBlock != Blocks.torch &&
+      enable_torch_auto_placement &&
+      torch_auto_placement        &&
+      !positions.contains( pos )  &&
+      state.getBlock != TORCH     &&
       ForgeHooks.canToolHarvestBlock( plyr.worldObj, pos, plyr.getHeldItemMainhand )
 
 
