@@ -1,6 +1,6 @@
 mBreak - [Minecraft Mod][homepage]
 ===============================
-Version: 1.9.4-1
+Version: 1.9.4-2
 
 ![IMAGE](http://i.imgur.com/ONkhdsq.gif "")
 
@@ -27,7 +27,8 @@ Version: 1.9.4-1
 3. インストール
 ---------------
 
-  - [ 依存関係 ] の項目を参考に必要な Mod や ライブラリをインストールしてください
+  - 事前に [Minecraft Forge][forge] をインストールしておいてください
+  - [DependencyResolver][resolver] をインストールしてください
   - [ダウンロード][homepage]した jar ファイルを mods フォルダに移動させます
   - 作業は以上です
 
@@ -38,6 +39,12 @@ Version: 1.9.4-1
     Note:  
       表記されている Minecraft Forge のバージョンは開発に使用したものです  
       このバージョンでなければ動作しない､ということはないのであくまで参考程度に考えてください
+
+  - 1.9.4-2
+    - [Minecraft Forge][forge]: 1.9.4-12.17.0.1940
+    - [DependencyResolver][resolver]: 1.0
+    - [MC-Commons][commons]:    1.9.4-0.0.1
+
 
   - 1.9.4-1
     - [Minecraft Forge][forge]: 1.9.4-12.17.0.1940
@@ -74,6 +81,10 @@ Version: 1.9.4-1
 
 6. 更新履歴
 -----------
+
+  - 1.9.4-2
+    - [DependencyResolver][resolver] での依存関係解決に対応
+
 
   - 1.9.4-1
     - Minecraft 1.9.4 に対応
@@ -125,4 +136,5 @@ Version: 1.9.4-1
 
 [homepage]: http://manofj.com/minecraft/
 [forge]:    http://files.minecraftforge.net/
+[resolver]: https://github.com/ManOfJ/DependencyResolver
 [commons]:  https://github.com/ManOfJ/MC-Commons
