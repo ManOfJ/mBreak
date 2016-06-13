@@ -8,7 +8,7 @@ project.configure( settings.mod ) {
   basePackage = 'com.manofj.minecraft.moj_mbreak'
   id          = 'moj_mbreak'
   name        = 'mBreak'
-  version     = '1.9.4-1'
+  version     = '1.9.4-2'
   homepage    = 'http://manofj.com/minecraft'
   updateJson  = 'http://manofj.com/minecraft/update?v=mBreak'
   authors     = [ 'Man of J' ]
@@ -20,5 +20,7 @@ project.configure( settings.build ) {
   repositories << { delegate.maven { url 'http://moj-files.x0.com/maven/' } }
   dependencies << { delegate.compile 'com.manofj.minecraft.moj_commons:mc_commons:1.9.4-0.0.1' }
 
-  // jar.manifest.attributes = [:]
+  jar.manifest.attributes = [
+    DependsJson: 'moj_dependencies.json'
+  ]
 }
