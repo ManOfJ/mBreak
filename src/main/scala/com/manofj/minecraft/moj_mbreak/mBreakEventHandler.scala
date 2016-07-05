@@ -1,35 +1,46 @@
 package com.manofj.minecraft.moj_mbreak
 
-import akka.actor.{ Actor, ActorRef, ActorSystem, Props }
-
-import com.google.common.collect.{ Lists, Maps }
+import akka.actor.Actor
+import akka.actor.ActorRef
+import akka.actor.ActorSystem
+import akka.actor.Props
+import com.google.common.collect.Lists
+import com.google.common.collect.Maps
 
 import net.minecraft.block.state.IBlockState
-import net.minecraft.entity.player.{ EntityPlayer, EntityPlayerMP }
+import net.minecraft.entity.player.EntityPlayer
+import net.minecraft.entity.player.EntityPlayerMP
 import net.minecraft.init.Blocks.TORCH
 import net.minecraft.item.ItemStack
 import net.minecraft.util.EnumActionResult.SUCCESS
-import net.minecraft.util.EnumFacing.{ EAST, NORTH, SOUTH, WEST }
+import net.minecraft.util.EnumFacing.EAST
+import net.minecraft.util.EnumFacing.NORTH
+import net.minecraft.util.EnumFacing.SOUTH
+import net.minecraft.util.EnumFacing.WEST
 import net.minecraft.util.EnumHand.MAIN_HAND
 import net.minecraft.util.math.BlockPos
+import net.minecraft.util.text.Style
+import net.minecraft.util.text.TextComponentString
 import net.minecraft.util.text.TextComponentTranslation
 import net.minecraft.world.World
 
 import net.minecraftforge.common.ForgeHooks
 import net.minecraftforge.event.entity.player.PlayerEvent.BreakSpeed
 import net.minecraftforge.event.world.BlockEvent.BreakEvent
+import net.minecraftforge.fml.client.FMLClientHandler
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent
+import net.minecraftforge.fml.common.gameevent.InputEvent.KeyInputEvent
 
 
-/**
-  * Mod のイベントハンドラ
-  * この Mod の中枢部分といえるオブジェクト
-  */
 object mBreakEventHandler {
-  import math.{ ceil, floor }
+  import math.ceil
+  import math.floor
 
-  import mBreakConfigHandler.{ chain_destruction, mining_speedmult, torch_auto_placement }
-  import mBreakState.{ enable_mining_speedmult, enable_chain_destruction, enable_torch_auto_placement }
+  import net.minecraft.client.resources.I18n.{ format => l10n }
+
+  import com.manofj.minecraft.moj_mbreak.mBreakSettings.{ Local => localSettings }
+  import com.manofj.minecraft.moj_mbreak.{ mBreakSettings => globalSettings }
+
 
   // アクター: たいまつ設置処理を行うメッセージ
   private[ this ] case object TorchPlacement
@@ -50,28 +61,43 @@ object mBreakEventHandler {
   // たいまつのアイテムスタック
   private[ this ] val torchItemStack = new ItemStack( TORCH )
 
-  /**
-    * ブロックの採掘速度計算イベントをフックする
-    * コンフィグの設定を用いて新たな採掘速度を算出する
-    * @param evt 採掘速度設定イベント
-    */
-  @SubscribeEvent
-  def breakSpeedEvent( evt: BreakSpeed ): Unit = {
-    // プレイヤーが指定座標のブロックをハーベストできるかどうか評価する
-    def canToolHarvestBlock( pos: BlockPos, plyr: EntityPlayer ): Boolean =
-      ForgeHooks.canToolHarvestBlock( plyr.worldObj, pos, plyr.getHeldItemMainhand )
 
-    import evt._
-    if ( enable_mining_speedmult && canToolHarvestBlock( getPos, getEntityPlayer ) ) {
-      setNewSpeed( getOriginalSpeed * mining_speedmult )
+  @SubscribeEvent
+  def keyInput( event: KeyInputEvent ): Unit = {
+    def stateText( enabled: Boolean ): String =
+      if ( enabled ) l10n( "moj_mbreak.state.enabled" ) else l10n( "moj_mbreak.state.disabled" )
+
+    def printChatMessage( message: String ): Unit =
+      FMLClientHandler.instance.getClient.ingameGUI.getChatGUI.printChatMessage {
+        new TextComponentString( "" ).appendSibling( new TextComponentString( "[mBreak]: " ).setStyle( new Style().setBold( true ) ) ).appendText( message )
+      }
+
+    if ( globalSettings.miningSpeedMultToggleKey.isKeyDown ) {
+      localSettings.miningSpeedMult = !localSettings.miningSpeedMult
+      printChatMessage( l10n( "moj_mbreak.chat.mining_speedmult", stateText( localSettings.miningSpeedMult ) ) )
+    }
+    if ( globalSettings.chainDestructionToggleKey.isKeyDown ) {
+      localSettings.chainDestruction = !localSettings.chainDestruction
+      printChatMessage( l10n( "moj_mbreak.chat.chain_destruction", stateText( localSettings.chainDestruction ) ) )
+    }
+    if ( globalSettings.torchAutoPlacementToggleKey.isKeyDown ) {
+      localSettings.torchAutoPlacement = !localSettings.torchAutoPlacement
+      printChatMessage( l10n( "moj_mbreak.chat.torch_auto_placement",
+                        stateText( localSettings.torchAutoPlacement ) ) )
     }
   }
 
-  /**
-    * ブロックが破壊されたときのイベントをフックする
-    * 主に連鎖破壊、たいまつの自動設置などの処理を行う
-    * @param evt ブロック破壊イベント
-    */
+  @SubscribeEvent
+  def breakSpeedEvent( event: BreakSpeed ): Unit = {
+    val player = event.getEntityPlayer
+    val canToolHarvestBlock = ForgeHooks.canToolHarvestBlock( player.worldObj, event.getPos, player.getHeldItemMainhand )
+
+    if ( localSettings.miningSpeedMult && canToolHarvestBlock )
+      event.setNewSpeed( ( event.getOriginalSpeed * globalSettings.miningSpeedMult ).toFloat )
+
+  }
+
+
   @SubscribeEvent
   def blockBreak( evt: BreakEvent ): Unit = {
     // プレイヤーの目線の高さをブロック座標で取得する関数
@@ -93,10 +119,10 @@ object mBreakEventHandler {
     def tAutoPlacementCheckCondition( plyr:  EntityPlayerMP,
                                       pos:   BlockPos,
                                       state: IBlockState ): Boolean =
-      enable_torch_auto_placement &&
-      torch_auto_placement        &&
-      !positions.contains( pos )  &&
-      state.getBlock != TORCH     &&
+      localSettings.torchAutoPlacement  &&
+      globalSettings.torchAutoPlacement &&
+      !positions.contains( pos )        &&
+      state.getBlock != TORCH           &&
       ForgeHooks.canToolHarvestBlock( plyr.worldObj, pos, plyr.getHeldItemMainhand )
 
 
@@ -162,7 +188,7 @@ object mBreakEventHandler {
                             player.inventory.decrStackSize( slot, 1 )
                             if ( !player.inventory.hasItemStack( torchItemStack ) )
                               player.addChatMessage { new TextComponentTranslation(
-                                "moj_mbreak.chat.torch_runout"
+                                l10n( "moj_mbreak.chat.torch_runout" )
                               ) }
 
                             // 処理が完了したためカウンタを進める
@@ -186,12 +212,12 @@ object mBreakEventHandler {
                 case None => // 何もしない
               }
             case None         =>
-              mBreak.log.warn(
+              mBreak.warn(
                 "Illegal EnumFacing from EntityPlayerMP#getHorizontalFacing" )
           }
 
         }
-        if ( enable_chain_destruction && chain_destruction ) // 連鎖破壊処理
+        if ( localSettings.chainDestruction && globalSettings.chainDestruction ) // 連鎖破壊処理
         {
           if ( positions contains getPos ) // 連鎖破壊により壊されたブロックの場合
           {
