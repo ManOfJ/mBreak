@@ -1,0 +1,84 @@
+
+project.configurations {
+  if ( project.maven.protocol != 'file' ) deployerJars
+}
+
+project.repositories {
+  if ( project.maven.protocol != 'file' ) mavenCentral()
+}
+
+project.dependencies {
+  switch ( project.maven.protocol ) {
+    case [ 'http', 'https' ]:
+      deployerJars 'org.apache.maven.wagon:wagon-http:2.2'
+      break
+    case 'ftp':
+      deployerJars 'org.apache.maven.wagon:wagon-ftp:2.2'
+      break
+    case 'scp':
+      deployerJars 'org.apache.maven.wagon:wagon-ssh:2.2'
+      break
+    default: break
+  }
+}
+
+project.uploadArchives {
+  repositories {
+    mavenDeployer {
+      def repositoryUrl = mavenRepositoryUrl ?: project.maven.url
+      def user          = mavenUserName ?: project.maven.auth.user
+
+      switch ( project.maven.protocol ) {
+        case 'file':
+          repository( url: repositoryUrl )
+          break
+        case [ 'ftp', 'http', 'https' ]:
+          configuration = configurations.deployerJars
+
+          repository( url: repositoryUrl ) {
+            def password = mavenPassword ?: project.maven.auth.password
+
+            authentication( userName: user, password: password )
+          }
+          break
+        case 'scp':
+          /* 'The host was not known and was not accepted by the configuration'などのエラーが発生してアップロードできない場合は
+           * 'ssh-keyscan -t rsa <ip_or_hostname> >> ~/.ssh/known_hosts'コマンドで公開鍵のフィンガープリントを登録する
+           */
+          configuration = configurations.deployerJars
+
+          repository( url: repositoryUrl ) {
+            def privatekey = mavenPrivateKey ?: project.maven.auth.privatekey
+            def passphrase = mavenPassphrase ?: project.maven.auth.passphrase
+
+            if ( passphrase )
+              authentication( userName: user, privateKey: privatekey, passphrase: passphrase )
+            else
+              authentication( userName: user, privateKey: privatekey )
+          }
+          break
+      }
+
+      pom {
+        groupId    = project.archive.groupId
+        artifactId = project.archive.artifactId
+        version    = project.archive.version
+
+        project {
+          inceptionYear project.maven.pom.inceptionYear
+
+          licenses {
+            project.maven.pom.licenses.each { licenze ->
+              license {
+                name         licenze.name
+                url          licenze.url
+                distribution licenze.distribution
+              }
+            }
+          }
+        }
+      }
+
+    }
+  }
+}

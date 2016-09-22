@@ -1,0 +1,20 @@
+
+project.sourceSets.all { sourceSet ->
+
+  def sourceCopyTaskName = "source${ sourceSet.name.capitalize() }Kotlin"
+  if ( !tasks.findByPath( sourceCopyTaskName ) ) {
+
+    def taskSourceCopy = project.buildscript.classLoader.loadClass( 'net.minecraftforge.gradle.user.TaskSourceCopy' )
+    task "${ sourceCopyTaskName }"( type: taskSourceCopy ) {
+      source = sourceSet."${ project.developmentLanguage }"
+      output = project.file( "${ buildDir }/sources/${ sourceSet.name }/${ project.developmentLanguage }" )
+    }
+
+    def sourceCopyTask = tasks."${ sourceCopyTaskName }"
+    def compileTask    = tasks."${ sourceSet.getCompileTaskName( project.developmentLanguage ) }"
+
+    compileTask.dependsOn sourceCopyTask
+    compileTask.source = project.fileTree( sourceCopyTask.output )
+  }
+
+}

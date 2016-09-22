@@ -1,209 +1,228 @@
-// TODO: アーカイブ生成の挙動を改善
 
-
-// ビルドスクリプトの実行
 buildscript {
-  settings.buildscript.repositories.each { function ->
-    function.delegate = repositories
-    function.call()
+  repositories {
+    jcenter()
+    maven {
+      name = 'forge'
+      url  = 'http://files.minecraftforge.net/maven'
+    }
   }
-  settings.buildscript.dependencies.each { function ->
-    function.delegate = dependencies
-    function.call()
+  dependencies {
+    classpath 'net.minecraftforge.gradle:ForgeGradle:2.2-SNAPSHOT'
+  }
+  externalSettings.buildScript.each {
+    applyFrom "external/buildscript-${ it }.gradle", [ to: buildscript ]
   }
 }
+apply plugin: 'net.minecraftforge.gradle.forge'
+externalSettings.loadPlugins.each {
+  applyFrom "external/load-plugins-${ it }.gradle"
+}
 
-// プラグインのロードを行う
-settings.build.plugins.each { apply plugin: it }
+group            = archive.groupId
+archivesBaseName = archive.artifactId
+version          = archive.version
 
-
-// Modの基本設定
-group            = settings.build.jar.groupId
-archivesBaseName = settings.build.jar.baseName
-version          = settings.mod.version
-
-// Forgeの基本設定
 minecraft {
-  version          = settings.forge.version
-  mappings         = settings.forge.mappings
-  runDir           = settings.forge.runDirectory
-  makeObfSourceJar = settings.build.jar.makeArchive.source
+  version          = forge.version
+  runDir           = 'run'
+  mappings         = forge.mappings
+  makeObfSourceJar = archive.makeSourceJar
+
+  expands.source.tokens.each minecraft.&replace
+  expands.source.files.each  minecraft.&replaceIn
 }
 
-// コンパイルタスクの設定
-tasks.withType( AbstractCompile ) {
-  sourceCompatibility = settings.build.languageLevel
-  targetCompatibility = settings.build.languageLevel
+jar.manifest.attributes += archive.manifest.attributes
 
-  if ( hasProperty( 'options' ) )
-    options.encoding = settings.build.encoding
+sourceCompatibility = targetCompatibility = jvmLanguageLevel
+tasks.withType( AbstractCompile ) { task ->
+  task.sourceCompatibility = task.targetCompatibility = jvmLanguageLevel
+  if ( task.hasProperty( 'options' ) ) task.options*.encoding  = 'utf-8'
 }
 
-// 依存関係解決に関する設定
-settings.build.repositories.each { function ->
-  function.delegate = repositories
-  function.call()
-}
-settings.build.dependencies.each { function ->
-  function.delegate = dependencies
-  function.call()
+externalSettings.resolveDependencies.each {
+  applyFrom "external/resolve-dependencies-${ it }.gradle"
 }
 
-
-// jarマニフェストファイルの設定
-jar.manifest.attributes = settings.build.jar.manifest.attributes
-
-
-
-
-
-import groovy.json.JsonBuilder
-import org.apache.tools.ant.filters.ReplaceTokens
-import net.minecraftforge.gradle.user.TaskSourceCopy
-
-// 独自のタスク定義を行う
-{ ->
-
-  def modLanguage       = settings.build.language
-  def cptlzdModLanguage = modLanguage.capitalize()
-
-  sourceSets.all { sourceSet ->
-    def sourceSetName       = sourceSet.name
-    def cptlzdSourceSetName = sourceSetName.capitalize()
-
-    // ソースコピータスクが定義されていなければ新規に定義する
-    def sourceCopyTaskName  = "source$cptlzdSourceSetName$cptlzdModLanguage"
-    if ( !tasks.findByPath( sourceCopyTaskName ) ) {
-      task "$sourceCopyTaskName"( type: TaskSourceCopy ) {
-        source = sourceSet[ modLanguage ]
-        output = project.file( "$buildDir/sources/$sourceSetName/$modLanguage" )
-      }
-
-      def sourceCopyTask = tasks."$sourceCopyTaskName"
-      def compileTask    = tasks."${ sourceSet.getCompileTaskName( modLanguage ) }"
-
-      compileTask.dependsOn sourceCopyTask
-      compileTask.source = project.fileTree( sourceCopyTask.output )
-    }
-
-    if ( sourceSetName == 'main' ) {
-      // ソースコードディレクトリを作成する
-      task makeMainSourceDirs {
-        ext.sourceDirs = sourceSet.allSource.srcDirs
-
-        outputs.files project.files( sourceDirs )
-
-        doLast { sourceDirs.each project.&mkdir }
-      }
-
-      // 基本パッケージを作成する
-      task makeBasePackage( dependsOn: makeMainSourceDirs ) {
-        ext {
-          destinationDirs = sourceSet."$modLanguage".srcDirs
-          paths = {
-            def basePackage = settings.mod.basePackage.replace( '.', '/' )
-            destinationDirs.collect { project.file( "$it/$basePackage" ) }
-          }
-        }
-
-        outputs.files project.files( paths() )
-
-        doLast { paths().each project.&mkdir }
-      }
-
-      // Modのアセットディレクトリを作成する
-      task makeAssetsDir( dependsOn: makeMainSourceDirs ) {
-        ext {
-          destinationDirs = sourceSet.resources.srcDirs
-          paths = { destinationDirs.collect { project.file( "$it/assets/${ settings.mod.id }" ) } }
-        }
-
-        outputs.files project.files( paths() )
-
-        doLast { paths().each project.&mkdir }
-      }
-
-      // mcmod.infoファイルを生成する
-      task genMcmodInfo( dependsOn: makeMainSourceDirs ) {
-        ext {
-          destinationDirs = sourceSet.resources.srcDirs
-          paths = { destinationDirs.collect { project.file( "$it/mcmod.info" ) } }
-        }
-
-        inputs.property 'info', settings.mod.info
-
-        outputs.files project.files( paths() )
-
-        doLast {
-          def json = new JsonBuilder()
-          def data = settings.mod.info()
-
-          data += [ modid: '@modid@', version: '@version@' ]
-          json( [ data ] )
-          def text = json.toPrettyString()
-
-          paths()*.text = text
-        }
-      }
-    }
-
-  }
-
-
-  def documentTaskName = "${ modLanguage }doc"
-  if ( tasks.findByPath( documentTaskName ) ) {
-    // 言語に対応するドキュメント生成タスクが存在する場合、
-    // 専用のアーカイブ生成タスクを新規に定義する
-
-    def documentTask = tasks."$documentTaskName"
-    def docJarTaskName = "${ documentTaskName }Jar"
-
-    task "$docJarTaskName"( type: Jar, dependsOn: documentTask ) {
-      classifier = documentTaskName
-      from documentTask.destinationDir
-    }
-
-    if ( settings.build.jar.makeArchive.document )
-      artifacts.archives tasks."$docJarTaskName"
-  }
-  else {
-    // 言語に対応するドキュメント生成タスクが存在しない場合、
-    // 汎用のアーカイブ生成タスクを新規に定義する
-
-    task javadocJar( type: Jar, dependsOn: javadoc ) {
-      classifier = 'javadoc'
-      from javadoc.destinationDir
-    }
-
-    javadoc.source = sourceSets.main.allJava
-
-    if ( settings.build.jar.makeArchive.document )
-      artifacts.archives javadocJar
-  }
-
-
-  // 言語固有のタスク定義をロードする
-  def build_for_language = project.file( "build_${ modLanguage }.gradle" )
-  if ( build_for_language.exists() )
-    apply from: build_for_language
-
-}()
-
-
-// リソースファイルのコピー時に変数展開を行う
 processResources {
-  inputs.property 'modid',   settings.mod.id
-  inputs.property 'version', settings.mod.version
+  inputs.property 'files',  { expands.resource.files }
+  inputs.property 'tokens', { expands.resource.tokens }
 
   from( sourceSets.main.resources.srcDirs ) {
-    include 'mcmod.info'
-    filter( ReplaceTokens, tokens: replaceTokens() )
+    include expands.resource.files
+    filter( org.apache.tools.ant.filters.ReplaceTokens, tokens: expands.resource.tokens )
   }
 
   from( sourceSets.main.resources.srcDirs ) {
-    exclude 'mcmod.info'
+    exclude expands.resource.files
   }
 }
 
-// ソースコードコピー時の変数展開で参照される辞書を追加
-tasks.withType( TaskSourceCopy )*.replace( replacements() )
+task setupMyWorkspace {
+  finalizedBy setupDecompWorkspace
+  doLast {
+    project.file( 'init' ).deleteOnExit()
+    project.file( 'init.bat' ).deleteOnExit()
+    project.file( 'README.md' ).delete()
+
+    def readme = project.file( 'README-TEMPLATE.md' )
+    readme.text =
+      readme.text
+        .replace( '@mod_name@', mcmod.name )
+        .replace( '@mod_version@', mcmod.version )
+        .replace( '@author@', mcmod.author )
+        .replace( '@inception_year@', rootProject.maven.pom.inceptionYear )
+        .replace( '@licenses@',
+          "このModは以下のライセンスのもとで提供されています${ eol }" +
+          ( rootProject.maven.pom.licenses.collect {
+            "  - [${ it.name }](${ it.url })"
+          }.join( "${ eol }" ) )
+        )
+    readme.renameTo( 'README.md' )
+
+  }
+}
+
+task makeMainSourceDirs {
+  ext.sourceDirs = sourceSets.main."${ developmentLanguage }".srcDirs
+
+  outputs.files project.files( sourceDirs )
+
+  doLast {
+    sourceDirs.each project.&mkdir
+  }
+}
+setupDecompWorkspace.finalizedBy makeMainSourceDirs
+
+task genMcmodInfo {
+  ext {
+    destinationDirs = sourceSets.main.resources.srcDirs
+    paths = destinationDirs.collect { project.file( "${ it }/mcmod.info" ) }
+  }
+
+  if ( !project.hasProperty( 'force' ) )
+  {
+    inputs.property 'modinfo', mcmod.info
+    outputs.files project.files( paths )
+  }
+
+  doLast {
+    destinationDirs.each project.&mkdir
+
+    def json = new groovy.json.JsonBuilder( [ mcmod.info() ] )
+    def text = json.toString()
+
+    paths*.text = text
+  }
+}
+processResources.dependsOn genMcmodInfo
+setupDecompWorkspace.finalizedBy genMcmodInfo
+
+task genDependencyJSON( dependsOn: configurations.runtime ) {
+  ext {
+    destinationDirs = sourceSets.main.resources.srcDirs
+    paths = destinationDirs.collect { project.file( "${ it }/dependencies.json" ) }
+  }
+
+  if ( !project.hasProperty( 'force' ) )
+  {
+    inputs.property 'dependencies', configurations.runtime.files
+    outputs.files project.files( paths )
+  }
+
+  doLast {
+    def ignoreUrls = [
+      'https://repo1.maven.org/maven2',
+      'https://jcenter.bintray.com',
+      'https://libraries.minecraft.net',
+      'http://files.minecraftforge.net/maven'
+    ]
+
+    def mavenRepositories = []
+    repositories.withType( MavenArtifactRepository ) {
+      def url = it.url.toString()
+      if ( url.startsWith( 'http' ) && ignoreUrls.every { !url.startsWith( it ) } )
+        mavenRepositories << ( url.endsWith( '/' ) ? url : "${ url }/" )
+    }
+    mavenRepositories << 'https://repo1.maven.org/maven2/'
+    mavenRepositories.unique()
+
+    def ignoreGroups = project.properties[ 'ignoreGroups' ]?.split( ',' )
+    def configuration = configurations.runtime.resolvedConfiguration
+    def dependencies  = configuration.firstLevelModuleDependencies
+    def allModuleArtifacts = dependencies.collect { it.allModuleArtifacts }
+
+    def libraries = []
+    def buildChecksum = { url ->
+      def checksum = [:]
+      try
+      {
+        checksum << [ md5: "${ url }.md5".toURL().text ]
+        checksum << [ sha1: "${ url }.sha1".toURL().text ]
+      }
+      catch ( e )
+      {
+        ;
+      }
+      checksum ? [ checksum: checksum ] : [:]
+    }
+
+    allModuleArtifacts.flatten().unique().each { artifact ->
+      def id = artifact.moduleVersion.id
+
+      def groupId = id.group
+      def artifactId = id.name
+      def version = id.version
+      def file = artifact.file
+
+      if ( ignoreGroups?.any { groupId.startsWith( it ) } ) return
+
+      mavenRepositories.each { baseUrl ->
+
+        def url = "${ baseUrl }${ groupId.replace( '.', '/' ) }/${ artifactId }/${ version }/${ file.name }"
+        try
+        {
+          def urlObj = url.toURL()
+          urlObj.openConnection().with {
+            requestMethod = 'HEAD'
+            connect()
+            if ( responseCode == 200 ) {
+              libraries << [
+                maven: [
+                  url: "${ baseUrl }",
+                  groupId: groupId,
+                  artifactId: artifactId,
+                  version: version
+                ] << buildChecksum( url ),
+                serverreq: true,
+                clientreq: true
+              ]
+            }
+            disconnect()
+          }
+
+        }
+        catch ( err )
+        {
+          logger.warn( err.message )
+        }
+
+      }
+    }
+
+    if ( libraries )
+    {
+      destinationDirs.each project.&mkdir
+
+      def json = new groovy.json.JsonBuilder( [ libraries: libraries ] )
+      def text = json.toString()
+
+      paths*.text = text
+    }
+  }
+}
+
+externalSettings.createTasks.each {
+  applyFrom "external/create-tasks-${ it }.gradle"
+}

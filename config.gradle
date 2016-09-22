@@ -1,0 +1,129 @@
+/* 独自タスクにより出力されるファイルの改行コード
+ * [ '\r', '\n', '\r\n' ]のいずれかを記述
+ */
+eol = '\n' // 必須項目
+
+/* 開発に使用する言語
+ * [ 'java', 'scala', 'groovy', 'kotlin' ]のいずれかを記述
+ */
+developmentLanguage = 'scala' // 必須項目
+
+// java8を使うなら1.8に変更する
+jvmLanguageLevel = 1.6 // 必須項目
+
+
+/* Forgeに関する設定項目
+ */
+forge = [
+  version:  '1.10.2-12.18.1.2092', // 必須項目
+  mappings: 'snapshot_20160518'    // 必須項目
+]
+
+/* Modに関する情報
+ */
+mcmod = [
+  package: 'com.manofj.minecraft.moj_mbreak', // 必須項目
+  id:      'moj_mbreak', // 必須項目
+  name:    'mBreak', // 必須項目
+  version: '1.10.2-2', // 必須項目
+  author:  'ManOfJ', // 必須項目
+
+  info: { [
+    modid:        mcmod.id,
+    name:         mcmod.name,
+    description:  '',
+    version:      '@version@',
+    mcversion:    forge.version,
+    // Mod公開場所のURL
+    url:          'https://manofj.com/minecraft/',
+    /* アップデート確認用JSONファイルのURL､書式は下記リンクを参照
+     * https://gist.github.com/LexManos/7aacb9aa991330523884
+     */
+    updateUrl:    'http://manofj.com/minecraft/update?v=mBreak',
+    // mcmod.author以外にも作者が存在する場合は追加で記述する
+    authorList:   [
+      mcmod.author
+    ],
+    credits:      '',
+    logoFile:     '',
+    screenshots:  [],
+    dependencies: []
+  ] }
+]
+
+/* 出力されるアーカイブに関する設定
+ */
+archive = [
+  groupId:    mcmod.package, // 必須項目
+  // Modの名前にファイル名として好ましくない文字が使用されている場合は別途記入する
+  artifactId: mcmod.name,    // 必須項目
+  version:    mcmod.version, // 必須項目
+
+  manifest: [
+    attributes: [
+      DependsJson: 'dependencies.json'
+    ]
+  ],
+
+  makeSourceJar:   true,
+  makeDocumentJar: false
+]
+
+/* ファイルの変数展開に関する設定 */
+expands = [
+  source: [
+    files:  [],
+    /* ソースコードの変数展開にはキー文字列がそのまま使用されるため
+     * キー文字列には一般的な文字列を使用しない､あるいは記号で囲むなどして誤動作を避ける
+     */
+    tokens: [
+      '@version@':    mcmod.version,
+      '@updateJson@': mcmod.info().updateUrl
+    ]
+  ],
+  resource: [
+    files:  [
+      'mcmod.info'
+    ],
+    /* リソースの変数展開にはキー文字列を@で囲った文字列をが使用される
+     * [ 'foo': 'bar' ]なら'@foo@'と記述することで'bar'に変数展開される
+     */
+    tokens: [
+      'version': mcmod.version
+    ]
+  ]
+]
+
+/* 外部の設定ファイルを記述する */
+externalSettings = [
+  // プロジェクトの評価前にプラグインを読み込むgradleファイル一覧
+  // externalフォルダに配置､接頭辞は'preload-plugins-'
+  preLoadPlugins:      [
+    'user',
+    developmentLanguage
+  ],
+  // ビルドスクリプトの依存関係解決などを行うgradleファイル一覧
+  // externalフォルダに配置､接頭辞は'buildscript-'
+  buildScript:         [
+    'user',
+    developmentLanguage
+  ],
+  // 通常のタイミングでプラグインを読み込むgradleファイル一覧
+  // externalフォルダに配置､接頭辞は'load-plugins-'
+  loadPlugins:         [
+    'user',
+    developmentLanguage
+  ],
+  // プロジェクトの依存関係解決などを行うgradleファイル一覧
+  // externalフォルダに配置､接頭辞は'resolve-dependencies-'
+  resolveDependencies: [
+    'user',
+    developmentLanguage
+  ],
+  // タスクの生成などを行うgradleファイル一覧
+  // externalフォルダに配置､接頭辞は'create-tasks-'
+  createTasks:         [
+    'user',
+    developmentLanguage
+  ]
+]
