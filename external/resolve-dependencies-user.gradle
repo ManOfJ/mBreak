@@ -1,0 +1,8 @@
+
+repositories {
+  maven { url 'http://maven.manofj.com/' }
+}
+
+dependencies {
+  compile group: 'com.manofj.commons.minecraftforge', name: 'commons-minecraftforge', version: '1.0.0'
+}

@@ -1,4 +1,0 @@
-
-project.configure( settings.build ) {
-  plugins << 'scala'
-}

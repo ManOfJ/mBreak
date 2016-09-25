@@ -1,0 +1,9 @@
+System.properties[ 'kotlinVersion' ] = '1.0.3'
+
+repositories {
+  mavenCentral()
+}
+
+dependencies {
+  classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${ System.properties[ 'kotlinVersion' ] }"
+}

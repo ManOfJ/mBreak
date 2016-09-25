@@ -15,9 +15,11 @@ out
 
 # gradle
 build
-gradle
 .gradle
 
 # other
 eclipse
 run
+
+# secret
+maven.gradle

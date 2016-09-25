@@ -1,0 +1,9 @@
+
+project.repositories {
+  mavenCentral()
+}
+
+project.dependencies {
+  compile "org.jetbrains.kotlin:kotlin-stdlib:${ System.properties[ 'kotlinVersion' ] }"
+  compile "org.jetbrains.kotlin:kotlin-reflect:${ System.properties[ 'kotlinVersion' ] }"
+}
